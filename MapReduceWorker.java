@@ -38,7 +38,7 @@ public class MapReduceWorker {
     }
 
     private void prepareLogFile() {
-	String logFilePath = logPath + "/" + System.getenv().get("HOST") + "-" + executable + ".log";
+	String logFilePath = logPath + "/" + System.getenv().get("HOSTNAME") + "-" + executable + ".log";
 	logFile = new File(logFilePath);
 
 	try {

@@ -90,7 +90,7 @@ public class MapReduceServer {
 		user = configs.get(key);
 	    }
 
-	    else if (key.equals("HOST")) {
+	    else if (key.equals("HOSTNAME")) {
 		host = configs.get(key);
 	    }
 
@@ -171,7 +171,7 @@ public class MapReduceServer {
 	}
     }
     
-    private static final String[] envNames = { "PWD", "USER", "HOST" };
+    private static final String[] envNames = { "PWD", "USER", "HOSTNAME" };
     private void getSystemEnv() throws MapReduceServerException {
 	Map<String, String> envMap = System.getenv();
 	for (String env : envNames) {
