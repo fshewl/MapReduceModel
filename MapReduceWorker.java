@@ -112,12 +112,11 @@ public class MapReduceWorker {
 
     private String buildCommand(String chunkFile) {
 	StringBuilder sb = new StringBuilder();
-	String executableAbsolutePath = executablePath + "/" + executable;
 	String filename = chunkFile.substring(chunkFile.lastIndexOf("/")+1);
 	String outputFile = outputPath + "/" + filename + ".out";
 	String logFile = logPath + "/" + filename + ".log";
-
-	sb.append(executableAbsolutePath + " ");
+	
+	sb.append("java -cp " + executablePath + " " + executable + " ");
 	sb.append(chunkFile + " ");
 	sb.append(outputFile + " ");
 	sb.append(logFile);
