@@ -500,7 +500,6 @@ public class MapReduceServer {
 
 	    for (File f : outputFiles) {
 		String filePath = reduceInputPath + "/" +  f.getName();
-		System.out.println(filePath);
 		String[] commands = new String[]{ "/bin/sh", "-c",
 						   "sort " + filePath + " -o " + filePath };
 
