@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.net.Socket;
 import java.net.ServerSocket;
+import java.net.InetAddress;
 import java.lang.Process;
 import java.lang.ProcessBuilder;
 import java.util.List;
@@ -14,6 +15,10 @@ import java.util.*;
 
 
 public class MapReduceServer {
+    private List<String> hosts = new ArrayList<String>() {{
+	add("Wenlei-Frank.local");
+	}};
+
     private HashMap<String, String> configs;
     private ChunkManager chunkManager;
     private String pwd;
@@ -30,10 +35,15 @@ public class MapReduceServer {
     private String reduceInputPath;
     private String outputPath;
     private String logPath;
+    private HashMap<String, String> hostMap;
     
     public MapReduceServer(String configFilePath, int p) throws MapReduceServerException {
+	hostMap = new HashMap<String, String>();
+	buildHostMap();
+	
 	environmentConfiguration(configFilePath);
 	port = p;
+	
 	chunkManager = new ChunkManager();
 	startServerThread(port);
     }
@@ -47,6 +57,19 @@ public class MapReduceServer {
 	chunkManager.reload(reduceInputPath);
 	spawnReducer();
 	
+    }
+    
+    private void buildHostMap() {
+	InetAddress address;
+
+	try {
+	    for (String host : hosts) {
+		address = InetAddress.getByName(host);
+		hostMap.put(address.getHostAddress(), host);
+	    }
+	} catch (Exception e) {
+
+	}
     }
 
     private void environmentConfiguration(String configFilePath) throws MapReduceServerException {
@@ -197,7 +220,7 @@ public class MapReduceServer {
 	try {
 	    serverSocket = new ServerSocket(port);
 	    serverThread = Executors.newSingleThreadExecutor();
-	    serverThread.submit(new ServerService(serverSocket, chunkManager));
+	    serverThread.submit(new ServerService(serverSocket, chunkManager, hostMap));
 	    
 	} catch (Exception e) {
 	    throw new MapReduceServerException("Server thread couldn't start!");
@@ -216,10 +239,11 @@ public class MapReduceServer {
 	private ExecutorService handlerThreadPool;
 	static final int kNumThreads = 10;
 	private ChunkManager chunkManager;
-	
-	public ServerService(ServerSocket s, ChunkManager cm) {
+	private HashMap<String, String> hostMap;
+	public ServerService(ServerSocket s, ChunkManager cm, HashMap<String, String> hm) {
 	    serverSocket = s;
 	    chunkManager = cm;
+	    hostMap = hm;
 	    handlerThreadPool = Executors.newFixedThreadPool(kNumThreads);
 	}
 
@@ -230,9 +254,9 @@ public class MapReduceServer {
 		    Socket clientSocket = serverSocket.accept();
 		    
 		    System.out.println("Received a connection request from " +
-				       clientSocket.getInetAddress().toString().substring(1));
+				       hostMap.get(clientSocket.getInetAddress().toString().substring(1)));
 		    
-		    handlerThreadPool.submit(new Handler(clientSocket, chunkManager));
+		    handlerThreadPool.submit(new Handler(clientSocket, chunkManager, hostMap));
 		}
 		
 	    } catch (Exception e) {
@@ -243,11 +267,15 @@ public class MapReduceServer {
 	private static class Handler implements Runnable {
 	    private Socket socket;
 	    private String socketIP;
+	    private String hostName;
 	    private ChunkManager chunkManager;
-	    public Handler(Socket s, ChunkManager cm) {
+	    private HashMap<String, String> hostMap;
+	    public Handler(Socket s, ChunkManager cm, HashMap<String, String> hm) {
+		hostMap = hm;
 		socket = s;
 		socketIP = socket.getInetAddress().toString().substring(1);
-		System.out.println("Handling request from " + socketIP);
+		hostName = hostMap.get(socketIP);
+		System.out.println("Handling request from " + hostName);
 		chunkManager = cm;
 	    }
 
@@ -268,13 +296,13 @@ public class MapReduceServer {
 			List<String> chunkFile = new ArrayList<String>();
 
 			if (chunkManager.getNextChunkFile(chunkFile)) {
-			    System.out.println("Instructing worker at " + socketIP +
+			    System.out.println("Instructing worker at " + hostName +
 					       " to process " + chunkFile);
 			    MapReduceMessages.sendJobStart(out, chunkFile.get(0));
 			}
 
 			else {
-			    System.out.println("Informing worker at " + socketIP +
+			    System.out.println("Informing worker at " + hostName +
 				" that all chunks have benn processed");
 
 			    MapReduceMessages.sendServerDone(out);
@@ -282,11 +310,11 @@ public class MapReduceServer {
 		    }
 
 		    else if (messageType.equals("JOB_DONE")) {
-			chunkManager.markChunkAsProcessed(socketIP, messages.get(1));
+			chunkManager.markChunkAsProcessed(hostName, messages.get(1));
 		    }
 
 		    else if (messageType.equals("JOB_FAIL")) {
-			chunkManager.rescheduleChunk(socketIP, messages.get(1));
+			chunkManager.rescheduleChunk(hostName, messages.get(1));
 		    }
 
 		    else {
@@ -294,7 +322,7 @@ public class MapReduceServer {
 		    }
 
 		} catch (Exception e) {
-		    System.out.println("Conversation with " + socketIP +
+		    System.out.println("Conversation with " + hostName +
 				       " has exception.");
 
 		} finally {
@@ -304,7 +332,7 @@ public class MapReduceServer {
 
 		    }
 		}
-		System.out.println("Conversation with " + socketIP
+		System.out.println("Conversation with " + hostName
 				   + " is done.");
 	    }
 	}
@@ -326,9 +354,6 @@ public class MapReduceServer {
 	return command.toString();
     }
     
-    private List<String> hosts = new ArrayList<String>() {{
-	add("Wenlei-Frank.local");
-	}};
 
     private void spawnMapper() {
 	ExecutorService workers = Executors.newFixedThreadPool(hosts.size());
