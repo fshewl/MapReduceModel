@@ -19,7 +19,6 @@ public class MapReduceServerException extends Exception {
 	super(name, throwable);
     }
 
-
     public static void main(String[] argv) throws MapReduceServerException {
 	throw new MapReduceServerException("MapReduce Server Exception.");
 
