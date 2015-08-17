@@ -58,7 +58,11 @@ public class MapReduceServer {
 	spawnReducer();
 	
     }
-    
+
+    public void stop() {
+	stopServerThread();
+    }
+
     private void buildHostMap() {
 	InetAddress address;
 
@@ -224,6 +228,22 @@ public class MapReduceServer {
 	    
 	} catch (Exception e) {
 	    throw new MapReduceServerException("Server thread couldn't start!");
+	}
+
+    }
+
+    public void stopServerThread() {
+
+	try {
+	    serverSocket.close();
+	    serverThread.shutdown();
+	    boolean isShutdown = serverThread.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+	    if (isShutdown) {
+		System.out.println("Server stoppped!");
+	    }
+		
+	} catch (Exception e) {
+
 	}
 
     }
@@ -584,6 +604,7 @@ public class MapReduceServer {
 	try {
 	    MapReduceServer server = new MapReduceServer("mr.cfg", 1234);
 	    server.run();
+	    server.stop();
 	} catch (MapReduceServerException e) {
 	    System.out.println("Couldn't start server!");
 	    System.out.println("ERROR: " + e.getMessage());
