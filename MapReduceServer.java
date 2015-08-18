@@ -17,6 +17,7 @@ import java.util.*;
 public class MapReduceServer {
     private List<String> hosts = new ArrayList<String>() {{
 	add("Wenlei-Frank.local");
+	add("Wenlei-Frank.local");
 	}};
 
     private HashMap<String, String> configs;
@@ -52,9 +53,7 @@ public class MapReduceServer {
 	chunkManager.reload(inputPath);
 	spawnMapper();
 
-	groupByKey();
-	
-	chunkManager.reload(reduceInputPath);
+	chunkManager.reload(mapOutputPath);
 	spawnReducer();
 	
     }
@@ -401,7 +400,7 @@ public class MapReduceServer {
 	ExecutorService workers = Executors.newFixedThreadPool(hosts.size());
 
 	for (int i = 0; i < hosts.size(); i++) {
-	    String command = buildCommand(hosts.get(i), executablePath, reducer, outputPath, logPath, "");
+	    String command = buildCommand(hosts.get(i), executablePath, reducer, outputPath, logPath, "none");
 	    System.out.println(command);
 	    workers.submit(new Worker(command));
 	}
@@ -467,6 +466,12 @@ public class MapReduceServer {
 	    for (File f : dir.listFiles()) {
 		if (f.isFile()) {
 		    unprocessedChunks.add(path + "/" + f.getName());
+		    size++;
+		}
+
+		else {
+		    System.out.println(f.getAbsolutePath());
+		    unprocessedChunks.add(f.getAbsolutePath());
 		    size++;
 		}
 	    }
