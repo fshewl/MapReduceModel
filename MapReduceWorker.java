@@ -11,6 +11,7 @@ public class MapReduceWorker {
     String executable;
     String outputPath;
     String logPath;
+    String extraArguments;
     File logFile;
     PrintWriter out;
     
@@ -21,18 +22,20 @@ public class MapReduceWorker {
 	executable = configs[3];
 	outputPath = configs[4];
 	logPath = configs[5];
+	extraArguments = configs[6];
 
 	prepareLogFile();
     }
     
     public MapReduceWorker(String sHost, String sPort, String exePath,
-		  String exe, String outPath, String lPath) {
+			   String exe, String outPath, String lPath, String extraArg) {
 	serverHost = sHost;
 	serverPort = sPort;
 	executablePath = exePath;
 	executable = exe;
 	outputPath = outPath;
 	logPath = lPath;
+	extraArguments = extraArg;
 
 	prepareLogFile();
     }
@@ -113,13 +116,13 @@ public class MapReduceWorker {
     private String buildCommand(String chunkFile) {
 	StringBuilder sb = new StringBuilder();
 	String filename = chunkFile.substring(chunkFile.lastIndexOf("/")+1);
-	String outputFile = outputPath + "/" + filename + ".out";
 	String logFile = logPath + "/" + filename + ".log";
 	
 	sb.append("java -cp " + executablePath + " " + executable + " ");
 	sb.append(chunkFile + " ");
-	sb.append(outputFile + " ");
-	sb.append(logFile);
+	sb.append(outputPath + " ");
+	sb.append(logFile + " ");
+	sb.append(extraArguments);
 
 	return sb.toString();
 	

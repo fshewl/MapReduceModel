@@ -4,21 +4,34 @@ public class WordCountMapper {
     
     public static void main(String[] argv) {
 	String inputFilePath = argv[0];
-	String outputFilePath = argv[1];
+	String outputDirPath = argv[1];
 	String logFilePath = argv[2];
+	int numOfSplit = Integer.parseInt(argv[3]);
 
 	File inputFile = new File(inputFilePath);
-	File outputFile =  new File(outputFilePath);
 	File logFile = new File(logFilePath);
 	BufferedReader br;
-	PrintWriter out;
+	PrintWriter[] out;
 	PrintWriter log;
-
 
 	try {
 	    br = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile)));
+	    out = new PrintWriter[numOfSplit];
 
-	    out = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
+	    String inputFileName = inputFilePath.substring(inputFilePath.lastIndexOf("/")+1);
+
+	    // create output files
+	    for (int i = 0; i < numOfSplit; i++) {
+		String dir = outputDirPath + "/" + i + "/";
+		System.out.println(dir);
+		File dirFile = new File(dir);
+		if (!dirFile.exists()) {
+		    dirFile.mkdirs();
+		}
+		String fileName = dir + inputFileName + ".tmp";
+		out[i] = new PrintWriter(new BufferedWriter(new FileWriter(fileName)));
+	    }
+
 	    log = new PrintWriter(new BufferedWriter(new FileWriter(logFile, true)));
 	    log.println("Processing file: " + inputFilePath);
 
@@ -29,13 +42,20 @@ public class WordCountMapper {
 		for (String word : words) {
 		    word = word.replaceAll("^[^a-zA-Z0-9\\s]+|[^a-zA-Z0-9\\s]+$", "");
 		    word = word.toLowerCase();
-		    if (word.length() > 0)
-			out.println(word + " 1");
+
+		    // map and split
+		    if (word.length() > 0) {
+			int fileHash = Math.abs(word.hashCode())%numOfSplit;
+			out[fileHash].println(word + " 1");
+		    }
 		}
 	    }
 
 	    log.println("exit code : 0");
-	    out.close();
+	    
+	    for (int i = 0; i< numOfSplit; i++)
+		out[i].close();
+	    
 	    log.close();
 
 	} catch (Exception e) {

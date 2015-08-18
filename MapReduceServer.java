@@ -359,7 +359,7 @@ public class MapReduceServer {
     }
     
     private static String workerExecutable = "MapReduceWorker";
-    private String buildCommand(String workerHost, String exePath, String exe, String outPath, String logPath) {
+    private String buildCommand(String workerHost, String exePath, String exe, String outPath, String logPath, String arguments) {
 	StringBuilder command = new StringBuilder();
 
 	command.append("ssh " + user + "@" + workerHost + " ");
@@ -369,7 +369,8 @@ public class MapReduceServer {
 	command.append(exePath + " ");
 	command.append(exe + " ");
 	command.append(outPath + " ");
-	command.append(logPath + "'");
+	command.append(logPath + " ");
+	command.append(arguments + "'");
 
 	return command.toString();
     }
@@ -379,7 +380,7 @@ public class MapReduceServer {
 	ExecutorService workers = Executors.newFixedThreadPool(hosts.size());
 
 	for (int i = 0; i < hosts.size(); i++) {
-	    String command = buildCommand(hosts.get(i), executablePath, mapper, mapOutputPath, logPath);
+	    String command = buildCommand(hosts.get(i), executablePath, mapper, mapOutputPath, logPath, (new Integer(numReducers)).toString());
 	    workers.submit(new Worker(command));
 	}
 
@@ -400,7 +401,7 @@ public class MapReduceServer {
 	ExecutorService workers = Executors.newFixedThreadPool(hosts.size());
 
 	for (int i = 0; i < hosts.size(); i++) {
-	    String command = buildCommand(hosts.get(i), executablePath, reducer, outputPath, logPath);
+	    String command = buildCommand(hosts.get(i), executablePath, reducer, outputPath, logPath, "");
 	    System.out.println(command);
 	    workers.submit(new Worker(command));
 	}
